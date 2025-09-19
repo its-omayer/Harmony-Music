@@ -803,4 +803,42 @@ class PlayerController extends GetxController
   }
 }
 
+Future<void> showLyrics() async {
+  showLyricsflag.value = !showLyricsflag.value;
+  
+  // Fetch lyrics if not already loaded
+  if (showLyricsflag.value && 
+      (lyrics["synced"].isEmpty && lyrics['plainLyrics'].isEmpty)) {
+    await _fetchLyrics();
+  }
+}
+
+Future<void> _fetchLyrics() async {
+  isLyricsLoading.value = true;
+  try {
+    final Map<String, dynamic>? lyricsR =
+        await SyncedLyricsService.getSyncedLyrics(
+            currentSong.value!, progressBarStatus.value.total.inSeconds);
+    if (lyricsR != null) {
+      lyrics.value = lyricsR;
+      isLyricsLoading.value = false;
+      return;
+    }
+    
+    final related = await _musicServices.getWatchPlaylist(
+        videoId: currentSong.value!.id, onlyRelated: true);
+    final relatedLyricsId = related['lyrics'];
+    
+    if (relatedLyricsId != null) {
+      final lyrics_ = await _musicServices.getLyrics(relatedLyricsId);
+      lyrics.value = {"synced": "", "plainLyrics": lyrics_};
+    } else {
+      lyrics.value = {"synced": "", "plainLyrics": "NA"};
+    }
+  } catch (e) {
+    lyrics.value = {"synced": "", "plainLyrics": "NA"};
+  }
+  isLyricsLoading.value = false;
+}
+
 enum PlayButtonState { paused, playing, loading }
