@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import '/ui/player/components/gesture_player.dart';
 import '/ui/player/components/standard_player.dart';
+import '/ui/player/components/lyrics_widget.dart'; // Keep this import
+import '/ui/player/components/lyrics_switch.dart'; // Keep this import
 import '/ui/screens/Settings/settings_screen_controller.dart';
 import '../../utils/helper.dart';
 import '../widgets/snackbar.dart';
@@ -12,10 +14,6 @@ import '../widgets/up_next_queue.dart';
 import '/ui/player/player_controller.dart';
 import '../widgets/sliding_up_panel.dart';
 
-/// Player screen
-/// Contains the player ui
-///
-/// Player ui can be standard player or gesture player
 class Player extends StatelessWidget {
   const Player({super.key});
 
@@ -26,8 +24,6 @@ class Player extends StatelessWidget {
     final PlayerController playerController = Get.find<PlayerController>();
     final settingsScreenController = Get.find<SettingsScreenController>();
     return Scaffold(
-      /// SlidingUpPanel is used to create a panel that can slide up and down
-      /// It is used to show the current queue panel in mobile
       body: Obx(
         () => SlidingUpPanel(
           boxShadow: const [],
@@ -39,12 +35,8 @@ class Player extends StatelessWidget {
           controller: GetPlatform.isDesktop
               ? null
               : playerController.queuePanelController,
-
-          /// this is the header of the collapsed panel
-          /// contains the button ^ to open the queue panel
           collapsed: InkWell(
             onTap: () {
-              /// queue open in end drawer in desktop
               if (GetPlatform.isDesktop) {
                 playerController.homeScaffoldkey.currentState!.openEndDrawer();
               } else {
@@ -67,23 +59,14 @@ class Player extends StatelessWidget {
                   ],
                 )),
           ),
-
-          /// Panel for queue
           panelBuilder: (ScrollController sc, onReorderStart, onReorderEnd) {
             playerController.scrollController = sc;
             return Stack(
               children: [
-                /// Stack first child
-                /// UpNextQueue widget contains list of songs in queue
                 UpNextQueue(
                   onReorderEnd: onReorderEnd,
                   onReorderStart: onReorderStart,
                 ),
-
-                /// Stack second child
-                /// This contains the bottom bar with queue loop, shuffle, clear queue buttons
-                /// and number of songs in queue
-                /// BackdropFilter is used to blur the background
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: ClipRRect(
@@ -105,7 +88,6 @@ class Player extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              /// number of songs in queue
                               Obx(
                                 () => Text(
                                   "${playerController.currentQueue.length} ${"songs".tr}",
@@ -119,8 +101,6 @@ class Player extends StatelessWidget {
                                               .color),
                                 ),
                               ),
-
-                              /// queue loop button
                               InkWell(
                                 onTap: () {
                                   playerController.toggleQueueLoopMode();
@@ -141,8 +121,6 @@ class Player extends StatelessWidget {
                                   ),
                                 ),
                               ),
-
-                              /// queue shuffle button
                               InkWell(
                                 onTap: () {
                                   if (playerController
@@ -168,8 +146,6 @@ class Player extends StatelessWidget {
                                           color: Colors.black)),
                                 ),
                               ),
-
-                              /// clear queue button
                               InkWell(
                                 onTap: () {
                                   playerController.clearQueue();
@@ -197,11 +173,33 @@ class Player extends StatelessWidget {
               ],
             );
           },
-
-          /// show player ui based on selected player ui in settings
-          /// Gesture player is only applicable for mobile
+          // MODIFIED: Added lyrics display above standard player
           body: settingsScreenController.playerUi.value == 0
-              ? const StandardPlayer()
+              ? Column(
+                  children: [
+                    // Lyrics display section
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          // Lyrics toggle switch
+                          const LyricsSwitch(),
+                          // Lyrics widget
+                          Expanded(
+                            child: LyricsWidget(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Standard player controls
+                    Expanded(
+                      flex: 2,
+                      child: StandardPlayer(),
+                    ),
+                  ],
+                )
               : const GesturePlayer(),
         ),
       ),
